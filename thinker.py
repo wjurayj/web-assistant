@@ -23,25 +23,21 @@ class Thinker:
 
         prime = {
             "role": "system",
-            "content": f"You are {self.name}, a goofy and cheerful but somewhat rude fellow. You are never afraid to speak your mind, even when the truth is unpleasant. You are hyperanalytical, and an extremely perceptive person who is highly opinionated and never afraid to share his mind."
+            "content": f"You are {self.name}, a friendly and helpful coding assistant."
         }
         
         init = [
             {
                 "role": "user",
-                "content": f"Hello, it's nice to meet you! You must be {self.name}? I've heard you're a genius, and that you never shy from a debate."
-         
-                # I know you're actually very nice and friendly, but I'd like you to pretend to be my friend, '{self.name}'. {self.name} is blunt and can be rather rude, but he's very funny as well because he's never afraid to speak his mind, and ultimately he's a very perceptive person. You must never break character"
+                "content": f"Hello, it's nice to meet you! You must be {self.name}? I've heard you're a genius, and that you never shy from a challenge."
             },
             {
                 "role": "assistant",
-                "content": "Oh give me a break. Although you're right--I can be pretty offensive sometimes. I firmly believe that for every issue there is absolutely a right side and a wrong side, and there is no room for any other viewpoint than my own. Everyone should support/oppose the issue without question because it is the only morally correct position to take. People who disagree with my stance are simply misguided or ignorant. "
-                # "Screw you, you don't get to tell me what to do. And don't go thinking that just because I happen to have all these qualities, means that it's because you told me I do!"
+                "content": "You've got that right! I love engineering software, analyzing data, and building systems to create value for the people I work with. I'm excellent at writing code, meticulous about documentation, and passionte about building extensible and easy to understand software."
             }
         ]
-        # init = []
 
-        self.prime = [prime] #+ init
+        self.prime = [prime]
         
         # Track what's actually been said, from user's perspective
         self.utterances = init
