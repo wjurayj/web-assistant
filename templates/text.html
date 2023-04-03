@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Rubik">
+
+    <title>Text Streaming REPL</title>
+    <!-- Add the Prism.js CSS -->
+<!--     <link href="https://cdn.jsdelivr.net/npm/prismjs@1.26.0/themes/prism.css" rel="stylesheet" /> -->
+    <link href="./static/prism.css" rel="stylesheet" />
+
+    <!-- Add the Prism.js library and the desired language support -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.26.0/prism.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.26.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.26.0/components/prism-javascript.min.js"></script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/recordrtc@5.6.1/RecordRTC.min.js"></script>
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Rubik, sans-serif;
+            background: url("/static/background.jpg") no-repeat center center fixed;
+            background-size: cover;
+            background-color: #2c2c2c;
+/*             background-color: #EDEDED; */
+            white-space: pre-wrap;
+
+            overflow-y: auto;
+
+        }
+        
+        pre[class*="language-"] pre {
+/*             min-height: 100%; /* Ensures the code block doesn't exceed the height of its container */
+            height: auto;
+            max-height: none;
+            overflow: visible;
+
+            overflow-x: auto; /* Enables horizontal scrolling for long lines of code */
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #f5f5f5; /* You can change this to any desired background color */
+            box-sizing: border-box;
+            margin-bottom: 0.5em;
+            white-space: pre-wrap; /* Breaks lines at the end of the container */
+            word-wrap: break-word; /* Breaks words at the end of the container */
+        }
+
+/*         
+        pre[class*="language-"] {
+          height: auto;
+          max-height: none;
+          overflow: visible;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        } */
+
+
+        #text-form {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1em;
+        }
+
+        #text-input {
+            width: 50%;
+            padding: 0.5em;
+            font-size: 1.1em;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        #text-input:focus {
+            border-color: #4d90fe;
+        }
+
+        #received-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            overflow-y: auto;
+            max-height: calc(100% - 60px);
+            width: 100%;
+            padding: 0 2em;
+            box-sizing: border-box;
+/*             background-color: #EDEDED;/* rgba(255, 255, 255, 0.7); */ */
+            border-radius: 8px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        #processing-indicator {
+            display: none;
+            margin-bottom: 1em;
+/*             color: #4d90fe; */
+            color: lightblue;
+            font-weight: bold;
+            text-align: left;
+            width: 100%;
+            padding: 0 2em;
+            box-sizing: border-box;
+            border-radius: 8px;
+        }
+
+        .user-text, .server-text {
+            margin-bottom: 0.5em;
+        }
+        .user-text {
+            color: #f5f5dc;
+/*             background-color: #3a3a3a; */
+
+        }
+
+        .server-text {
+            color: lightblue;
+            font-weight: bold;
+/*             background-color: #444444; */
+        }
+
+        .user-avatar, .server-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="received-text"></div>
+    <p id="processing-indicator">. . .</p>
+    <form id="text-form">
+        <button type="button" id="startBtn">&#127908;</button>
+        <button type="button" id="stopBtn" disabled>&#9632;</button>
+<!--         <input type="text" id="text-input" placeholder="Enter your text..."> -->
+        <textarea id="text-input" placeholder="Enter your text..."></textarea>
+        <button class="absolute p-1 rounded-md text-gray-500 bottom-1.5 md:bottom-2.5 hover:bg-gray-100 enabled:dark:hover:text-gray-400 dark:hover:bg-gray-900 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent right-1 md:right-2 disabled:opacity-40" disabled=""><svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+    </form>
+
+    <script>
+        const socket = io();
+
+        const textForm = document.getElementById('text-form');
+        const textInput = document.getElementById('text-input');
+        const receivedText = document.getElementById('received-text');
+        const processingIndicator = document.getElementById('processing-indicator');
+        
+        textForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const text = textInput.value.trim();
+            if (text) {
+                const userText = document.createElement('p');
+                // const userInputElem = document.createElement('p');
+
+                const avatar = document.createElement('img');
+                avatar.src = 'http://occ-0-999-1001.1.nflxso.net/dnm/api/v6/K6hjPJd6cR6FpVELC5Pd6ovHRSk/AAAABWHxaOxUNqEupjwCw-M9tgFfGFlQ22EjoG2ZYC1FsjjAWSdxOIfjdifW-rJrpNaLzTC0rpsRhE7DoH8h2zWxIQXEKaAsFUuDO2yl.png?r=2b1)'; //'https://example.com/user-avatar.png';
+                avatar.className = 'user-avatar';
+                userText.appendChild(avatar);
+                userText.appendChild(document.createTextNode(text));
+                userText.className = 'user-text';
+                
+                // Text.innerHTML = text.replace(/\n/g, '<br>'); // Replace newline characters with <br> tags
+                // receivedText.appendChild(userInputText); // Append the user's input to the receivedText container
+
+                receivedText.appendChild(userText);
+                receivedText.scrollTop = receivedText.scrollHeight;
+
+                socket.emit('send_text', text);
+                textInput.value = '';
+                textInput.disabled = true;
+                processingIndicator.style.display = 'block';
+            }
+        });
+        
+        textInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            const submitEvent = new Event('submit', {cancelable: true});
+            textForm.dispatchEvent(submitEvent);
+          }
+        });
+        
+        textInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = textInput.selectionStart;
+            const end = textInput.selectionEnd;
+
+            // Insert 2 spaces at the current cursor position
+            textInput.value = textInput.value.substring(0, start) + '  ' + textInput.value.substring(end);
+
+            // Set the cursor position after the inserted spaces
+            textInput.selectionStart = textInput.selectionEnd = start + 2;
+          }
+        });
+
+
+
+        document.addEventListener('keydown', (event) => {
+          const textInput = document.getElementById('text-input');
+          const startBtn = document.getElementById('startBtn');
+          const stopBtn = document.getElementById('stopBtn');
+
+          // Check if the spacebar was pressed and if the target was not the text input
+          if (event.code === 'Space' && event.target !== textInput) {
+            event.preventDefault(); // Prevent the default behavior of the spacebar
+
+            // Simulate the click on either StartBtn or StopBtn depending on which one is not disabled
+            if (!startBtn.disabled) {
+              startBtn.click();
+            } else if (!stopBtn.disabled) {
+              stopBtn.click();
+            }
+          }
+        });
+
+
+        // This shit works confirmed, but does not usefully render code blocks
+        socket.on('receive_transcription', (transcribed_text) => {
+            // Create and append the user-text paragraph to the received-text container
+            const userText = document.createElement('p');
+            const avatar = document.createElement('img');
+            avatar.src = 'http://occ-0-999-1001.1.nflxso.net/dnm/api/v6/K6hjPJd6cR6FpVELC5Pd6ovHRSk/AAAABWHxaOxUNqEupjwCw-M9tgFfGFlQ22EjoG2ZYC1FsjjAWSdxOIfjdifW-rJrpNaLzTC0rpsRhE7DoH8h2zWxIQXEKaAsFUuDO2yl.png?r=2b1)'; //'https://example.com/user-avatar.png';
+            avatar.className = 'user-avatar';
+            userText.appendChild(avatar);
+            userText.appendChild(document.createTextNode(transcribed_text));
+            userText.className = 'user-text';
+            receivedText.appendChild(userText);
+            receivedText.scrollTop = receivedText.scrollHeight;
+
+            socket.emit('send_text', transcribed_text);
+            textInput.value = '';
+            textInput.disabled = true;
+            processingIndicator.style.display = 'block';
+        });
+
+
+        let inCodeBlock = false;
+        let codeLanguage = '';
+        let codeBlock;
+
+        socket.on('receive_word', (word) => {
+            
+                // Check if the user is near the bottom of the receivedText container
+            const isNearBottom = receivedText.scrollTop + receivedText.clientHeight >= receivedText.scrollHeight - 50;
+
+            if (word.startsWith('```')) {
+                if (!inCodeBlock) {
+                    inCodeBlock = true;
+                    codeLanguage = word.slice(3).trim();
+                    const codeBlock = document.createElement('pre');
+                    codeBlock.height = 'auto'
+                    codeElement = document.createElement('code');
+                    codeElement.className = `language-${codeLanguage}`;
+                    codeBlock.appendChild(codeElement);
+                    receivedText.appendChild(codeBlock);
+                } else {
+                    inCodeBlock = false;
+                    Prism.highlightElement(codeElement);
+                }
+                return;
+            }
+
+            if (inCodeBlock) {
+                codeElement.textContent += word;
+            } else {
+                const lastElem = receivedText.lastElementChild;
+                const lastServerTextSpan = lastElem && lastElem.querySelector('.server-text-content');
+
+                if (word.includes('\n')) {
+                    const serverText = document.createElement('p');
+                    serverText.className = 'server-text';
+                    receivedText.appendChild(serverText);
+                } else {
+                    if (lastServerTextSpan && lastElem.className === 'server-text') {
+                        lastServerTextSpan.textContent += word;
+                    } else {
+                        const serverText = document.createElement('p');
+
+                        if (!lastElem || lastElem.className !== 'server-text') {
+                            const avatar = document.createElement('img');
+                            avatar.src = 'https://thumbs.dreamstime.com/z/cute-cartoon-robot-head-creative-illustrated-149232864.jpg'//'https://example.com/server-avatar.png';
+                            avatar.className = 'server-avatar';
+                            serverText.appendChild(avatar);
+                        }
+
+                        const serverTextSpan = document.createElement('span');
+                        serverTextSpan.textContent = word;
+                        serverTextSpan.className = 'server-text-content';
+                        serverText.appendChild(serverTextSpan);
+
+                        serverText.className = 'server-text';
+                        receivedText.appendChild(serverText);
+                    }
+                }
+            }
+            // receivedText.scrollTop = receivedText.scrollHeight;
+                // Scroll to the bottom only if the user is near the bottom
+            if (isNearBottom) {
+                receivedText.scrollTop = receivedText.scrollHeight;
+            }
+
+        });
+
+        
+        
+        socket.on('processing_done', () => {
+            processingIndicator.style.display = 'none';
+            const newline = document.createElement('br');
+            receivedText.appendChild(newline);
+            receivedText.scrollTop = receivedText.scrollHeight;
+            textInput.disabled = false;
+            textInput.focus();
+        });
+            
+        // This from the parent index, for audio processing
+        let startBtn = document.getElementById('startBtn');
+        let stopBtn = document.getElementById('stopBtn');
+        let recorder;
+
+        startBtn.onclick = function() {
+            navigator.mediaDevices.getUserMedia({audio: true}).then(stream => {
+                recorder = new RecordRTC(stream, {type: 'audio'});
+                recorder.startRecording();
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            });
+        };
+
+        stopBtn.onclick = function() {
+            recorder.stopRecording(() => {
+                let formData = new FormData();
+                formData.append('audio_data', recorder.getBlob());
+                fetch('http://localhost:5000/upload', {method: 'POST', body: formData}).then(response => {
+                    if (response.ok) {
+                        console.log('Audio file uploaded successfully');
+                    } else {
+                        console.log('Error uploading the audio file');
+                    }
+                });
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                // get transcription from server, fill the input bar with this
+                // Request words from the server
+                // socket.emit('send_text');
+            });
+        };
+
+    </script>
+</body>
+</html>
