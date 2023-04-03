@@ -110,6 +110,7 @@ socket.on('receive_word', (word) => {
             codeElement.className = `language-${codeLanguage}`;
             codeBlock.appendChild(codeElement);
             receivedText.appendChild(codeBlock);
+            Prism.highlightElement(codeElement);
         } else {
             inCodeBlock = false;
             Prism.highlightElement(codeElement);
