@@ -5,9 +5,8 @@ import time
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
 from chatter import Chatter, setup_logger
-from listener import Listener
 from thinker import Thinker
-import openai#.error import RateLimitError, APIConnectionError
+import openai
 from pydub import AudioSegment
 
 
@@ -23,8 +22,6 @@ def index():
 def text():
     return render_template('text.html')
 
-
-
 @app.route('/upload', methods=['POST'])
 def upload_audio():
     print('upload audio called')
@@ -32,16 +29,7 @@ def upload_audio():
     if file:
         filename = f'user_audio/{time.time()}.wav'
         file.save(filename)
-    
-    
-        # # Convert the file to a WAV file if needed
-        # if not file.filename.endswith('.wav'):
-        #     audio = AudioSegment.from_file(filename)
-        #     audio.export(filename, format='wav')
-        #     os.remove(file.filename)
-        # thread = threading.Thread(target=self.transcribe, args=(filename,), daemon=True)
-        # thread.start() #this sould be waited for in a diff function
-        # transcribe_queue.put(thread)
+
         transcription = transcribe(filename)
         print(transcription)
         socketio.emit('receive_transcription', transcription) #, room=room) No idea why GPT-4 added room lmao
@@ -56,31 +44,26 @@ def transcribe(filename):
 
     audio_file = open(filename, "rb")
 
-    # TODO: include prompt here for context on homonyms, noise
-    # ^ ^ ^ THis is now key since you don't have the whole audio history
     transcript = openai.Audio.transcribe("whisper-1", audio_file)#, prompt=self._collate_textmap())
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     content = transcript.text
 
-    # # demarcate pauses in speech
-    # if content and content[-1] not in '.!?:;,':
-    #     content += ','
+
 
     logger.info(f"Finished transcription of {filename} in: {elapsed_time:.2f} seconds")
-    # self.textmap[filename] = content #float(filename[:-4])
-    # print("transcribed:", content)
+
     print(transcript)
     return content
 
 
 @socketio.on('send_text')
 def handle_send_text(text, chatter=None):
-    chat.thinker.receive(text) #chat needs reworking for web app
+    chat.thinker.receive(text)
     
-    gen = my_generator()#chat.think()
-    # words = text.split()
+    gen = my_generator()
+
     tmp = ""
     for word in gen:
         if '``' in word and not tmp:
@@ -97,7 +80,6 @@ def handle_send_text(text, chatter=None):
         socketio.sleep(0.05)  # Adjust this value to control the speed of the word-by-word display
     emit('processing_done')
 
-# ... (previous code)
 
 def generator_wrapper(gen_func):
     def wrapper(*args, **kwargs):
@@ -105,16 +87,12 @@ def generator_wrapper(gen_func):
         has_error = True
         t = 0
         nfails = 4
-        # for i in range(nfails):
-        #     try:
-        #         gen = gen_func(*args, **kwargs)#self._process(webapp)
-        #         return gen
+
         ntries = 4
         for i in range(ntries):
             try:
                 # Try to get the first value from the generator
                 first_value = next(gen)
-                # has_error = False
                 break
             except openai.error.RateLimitError:
                 print(f"Hit rate limit on try #{i}")
@@ -130,10 +108,8 @@ def generator_wrapper(gen_func):
 
                 # Handle the error (e.g., log it, sleep and retry, etc.)
                 print(f"Unknown error occurred: {e}")
-                time.sleep(2**t)
-                t += 1
+                time.sleep(2**i)
 
-                # Add any necessary delay or handling logic here
         yield first_value
         yield from gen
 
@@ -146,7 +122,6 @@ def my_generator():
 
         
 def save_audio_to_file(audio_data, filename=None):
-    #here's where you call listener.listen()
     if not filename:
         filename = f'{time.time()}.wav'
     
@@ -159,23 +134,17 @@ def save_audio_to_file(audio_data, filename=None):
         wave_file.writeframes(audio_data)
 
 if __name__ == '__main__':
-    # llogger = setup_logger('listener', log_file='logs/listener.log')
-    # listener = Listener({}, llogger)
-
     logger = setup_logger('app', log_file='logs/app.log')
     
     tlogger = setup_logger('thinker', log_file='logs/thinker.log')
-    thinker = Thinker({}, tlogger)
-    # tconfig = {}#"model":"gpt-4-0314"}
-    # thinker = Thinker(tconfig, tlogger)
+    thinker = Thinker({}, tlogger) #Thinker({"model":"gpt-4-0314"}, tlogger)
     
     
     chat = Chatter(listener=None, thinker=thinker, speaker=None)
-    # chat.repl()
-    # chat.save()
-
-    # if not os.path.exists('audio_files'):
-    #     os.makedirs('audio_files')
+    if not os.path.exists('audio_files'):
+        os.makedirs('audio_files')
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
     try:
         socketio.run(app, debug=True)
     except KeyboardInterrupt:

@@ -1,8 +1,6 @@
 import json
 import asyncio
-from listener import Listener
 from thinker import Thinker
-# from speaker import Speaker
 import time
 import logging
 
@@ -30,10 +28,6 @@ def setup_logger(name, log_file, level=logging.INFO):
 
     return logger
 
-
-
-#Ideally, each class would simply look to the parent (i.e. for bot in [listener, thinker, speaker]: bot.parent = self
-#pass logdir through config?
 class Chatter:
     def __init__(self, listener=None, thinker=None, speaker=None):
         # self.speaker = Speaker()
@@ -45,8 +39,6 @@ class Chatter:
         pass
     
     def _interlink(self):
-        # TODO: make each worker have its own function
-        # TODO: This function should set the parent; more elegant that way
         if self.speaker:
             self.speaker.thinker = self.thinker
             self.thinker.speaker = self.speaker
@@ -71,8 +63,6 @@ class Chatter:
             for ch in gen:
                 print(ch, end="", flush=True)
 
-        #think out loud    
-    #right now the spaeaker is called directly by thinker.process, but ideally it'd be from here
     def speak(self):
         if self.speaker:
             self.logger.info(f"Sending roger to speaker, no new text input coming")
@@ -105,22 +95,14 @@ class Chatter:
         
 if __name__ == "__main__":
     
-
-    listener = None
-    # llogger = setup_logger('listener', log_file='logs/listener.log')
-    # listener = Listener({}, llogger)
-    
     tlogger = setup_logger('thinker', log_file='logs/thinker.log')
     # thinker = Thinker({}, tlogger)
     thinker = Thinker({"model":"gpt-4-0314"}, tlogger)
     
-    # with open('../keys.json') as f:
-    #     keys = json.load(f)
-
+    listener = None
     speaker = None
-    # speaker = Speaker({"api_key": keys['xilabs']})
     
-    chat = Chatter_v2(listener=listener, thinker=thinker, speaker=speaker)
+    chat = Chatter(listener=listener, thinker=thinker, speaker=speaker)
     chat.repl()
     chat.save()
 
