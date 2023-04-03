@@ -18,10 +18,6 @@ socketio = SocketIO(app)
 def index():
     return render_template('index.html')
 
-@app.route('/text')
-def text():
-    return render_template('text.html')
-
 @app.route('/upload', methods=['POST'])
 def upload_audio():
     print('upload audio called')
