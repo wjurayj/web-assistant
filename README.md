@@ -1,6 +1,7 @@
 To run the web assistant, first create a virtual environment with `python>=3.8`
 
 Then, run `pip install -r requirements.txt`
+Set your environment variable `OPENAI_API_KEY` to your API key
 
 Finally, run `python main.py`
 
