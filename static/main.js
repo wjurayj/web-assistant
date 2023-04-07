@@ -52,6 +52,7 @@ textInput.addEventListener('keydown', (e) => {
 
 
 
+
 document.addEventListener('keydown', (event) => {
   const textInput = document.getElementById('text-input');
   const startBtn = document.getElementById('startBtn');
@@ -165,7 +166,7 @@ socket.on('processing_done', () => {
     receivedText.appendChild(newline);
     receivedText.scrollTop = receivedText.scrollHeight;
     textInput.disabled = false;
-    textInput.focus();
+    // textInput.focus();
 });
 
 // This from the parent index, for audio processing
