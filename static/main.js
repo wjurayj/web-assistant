@@ -111,7 +111,7 @@ socket.on('receive_word', (word) => {
             codeElement.className = `language-${codeLanguage}`;
             codeBlock.appendChild(codeElement);
             receivedText.appendChild(codeBlock);
-            Prism.highlightElement(codeElement);
+            // Prism.highlightElement(codeElement);
         } else {
             inCodeBlock = false;
             Prism.highlightElement(codeElement);
@@ -121,6 +121,8 @@ socket.on('receive_word', (word) => {
 
     if (inCodeBlock) {
         codeElement.textContent += word;
+        Prism.highlightElement(codeElement);
+
     } else {
         const lastElem = receivedText.lastElementChild;
         const lastServerTextSpan = lastElem && lastElem.querySelector('.server-text-content');
