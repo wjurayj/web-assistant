@@ -127,11 +127,11 @@ socket.on('receive_word', (word) => {
         const lastElem = receivedText.lastElementChild;
         const lastServerTextSpan = lastElem && lastElem.querySelector('.server-text-content');
 
-        if (word.includes('\n')) {
-            const serverText = document.createElement('p');
-            serverText.className = 'server-text';
-            receivedText.appendChild(serverText);
-        } else {
+        // if (word.includes('\n')) {
+        //     const serverText = document.createElement('p');
+        //     serverText.className = 'server-text';
+        //     receivedText.appendChild(serverText);
+        // } else {
             if (lastServerTextSpan && lastElem.className === 'server-text') {
                 lastServerTextSpan.textContent += word;
             } else {
@@ -152,7 +152,7 @@ socket.on('receive_word', (word) => {
                 serverText.className = 'server-text';
                 receivedText.appendChild(serverText);
             }
-        }
+        // }
     }
     if (isNearBottom) {
         receivedText.scrollTop = receivedText.scrollHeight;
