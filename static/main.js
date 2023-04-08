@@ -19,12 +19,13 @@ textForm.addEventListener('submit', (event) => {
         userText.className = 'user-text';
 
         receivedText.appendChild(userText);
-        receivedText.scrollTop = receivedText.scrollHeight;
 
         socket.emit('send_text', text);
         textInput.value = '';
         textInput.disabled = true;
         processingIndicator.style.display = 'block';
+        receivedText.scrollTop = receivedText.scrollHeight;
+
     }
 });
 
@@ -77,18 +78,19 @@ socket.on('receive_transcription', (transcribed_text) => {
     // Create and append the user-text paragraph to the received-text container
     const userText = document.createElement('p');
     const avatar = document.createElement('img');
-    avatar.src = 'http://occ-0-999-1001.1.nflxso.net/dnm/api/v6/K6hjPJd6cR6FpVELC5Pd6ovHRSk/AAAABWHxaOxUNqEupjwCw-M9tgFfGFlQ22EjoG2ZYC1FsjjAWSdxOIfjdifW-rJrpNaLzTC0rpsRhE7DoH8h2zWxIQXEKaAsFUuDO2yl.png?r=2b1)'; //'https://example.com/user-avatar.png';
+    avatar.src = 'http://occ-0-999-1001.1.nflxso.net/dnm/api/v6/K6hjPJd6cR6FpVELC5Pd6ovHRSk/AAAABWHxaOxUNqEupjwCw-M9tgFfGFlQ22EjoG2ZYC1FsjjAWSdxOIfjdifW-rJrpNaLzTC0rpsRhE7DoH8h2zWxIQXEKaAsFUuDO2yl.png?r=2b1)';
     avatar.className = 'user-avatar';
     userText.appendChild(avatar);
     userText.appendChild(document.createTextNode(transcribed_text));
     userText.className = 'user-text';
     receivedText.appendChild(userText);
-    receivedText.scrollTop = receivedText.scrollHeight;
 
     socket.emit('send_text', transcribed_text);
     textInput.value = '';
     textInput.disabled = true;
     processingIndicator.style.display = 'block';
+    receivedText.scrollTop = receivedText.scrollHeight;
+
 });
 
 
@@ -127,32 +129,26 @@ socket.on('receive_word', (word) => {
         const lastElem = receivedText.lastElementChild;
         const lastServerTextSpan = lastElem && lastElem.querySelector('.server-text-content');
 
-        // if (word.includes('\n')) {
-        //     const serverText = document.createElement('p');
-        //     serverText.className = 'server-text';
-        //     receivedText.appendChild(serverText);
-        // } else {
-            if (lastServerTextSpan && lastElem.className === 'server-text') {
-                lastServerTextSpan.textContent += word;
-            } else {
-                const serverText = document.createElement('p');
+        if (lastServerTextSpan && lastElem.className === 'server-text') {
+            lastServerTextSpan.textContent += word;
+        } else {
+            const serverText = document.createElement('p');
 
-                if (!lastElem || lastElem.className !== 'server-text') {
-                    const avatar = document.createElement('img');
-                    avatar.src = 'https://thumbs.dreamstime.com/z/cute-cartoon-robot-head-creative-illustrated-149232864.jpg'
-                    avatar.className = 'server-avatar';
-                    serverText.appendChild(avatar);
-                }
-
-                const serverTextSpan = document.createElement('span');
-                serverTextSpan.textContent = word;
-                serverTextSpan.className = 'server-text-content';
-                serverText.appendChild(serverTextSpan);
-
-                serverText.className = 'server-text';
-                receivedText.appendChild(serverText);
+            if (!lastElem || lastElem.className !== 'server-text') {
+                const avatar = document.createElement('img');
+                avatar.src = 'https://thumbs.dreamstime.com/z/cute-cartoon-robot-head-creative-illustrated-149232864.jpg'
+                avatar.className = 'server-avatar';
+                serverText.appendChild(avatar);
             }
-        // }
+
+            const serverTextSpan = document.createElement('span');
+            serverTextSpan.textContent = word;
+            serverTextSpan.className = 'server-text-content';
+            serverText.appendChild(serverTextSpan);
+
+            serverText.className = 'server-text';
+            receivedText.appendChild(serverText);
+        }
     }
     if (isNearBottom) {
         receivedText.scrollTop = receivedText.scrollHeight;
