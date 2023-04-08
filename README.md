@@ -1,9 +1,22 @@
-To run the web assistant, first create a virtual environment with `python>=3.8`: if using conda, you can do this with the command `conda create -n webassistant python=3.10`
+To run the web assistant, first create a virtual environment with `python>=3.8`, and install `requirements.txt`
 
-Then, run `pip install -r requirements.txt`
-Set your environment variable `OPENAI_API_KEY` to your API key
+You'll need an OpenAI API key to run this.
 
-Finally, run `python main.py`
+If you use conda for package management, you can complete setup by running the following in your terminal:
+
+```
+conda create -n webassistant python=3.10
+pip install -r requirements.txt
+mkdir logs
+mkdir user_audio
+export OPENAI_API_KEY='<YOUR-API-KEY>'`
+```
+
+Then start the server by running:
+
+```
+python main.py
+```
 
 You can open the interface in `http://localhost:5000/`.
 
