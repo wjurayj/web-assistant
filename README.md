@@ -9,7 +9,7 @@ conda create -n webassistant python=3.10
 pip install -r requirements.txt
 mkdir logs
 mkdir user_audio
-export OPENAI_API_KEY='<YOUR-API-KEY>'`
+export OPENAI_API_KEY='<YOUR-API-KEY>'
 ```
 
 Then start the server by running:
