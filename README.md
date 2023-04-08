@@ -6,6 +6,7 @@ If you use conda for package management, you can complete setup by running the f
 
 ```
 conda create -n webassistant python=3.10
+conda activate webassistant
 pip install -r requirements.txt
 mkdir logs
 mkdir user_audio
