@@ -22,3 +22,4 @@ python main.py
 You can open the interface in `http://localhost:5000/`.
 
 Press space to start/stop recording, or you can just use the text bar to write your inputs.
+You can toggle between GPT-3.5 and GPT-4 by saying "Toggle" and the name of the model you want in the same message
