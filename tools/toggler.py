@@ -33,16 +33,20 @@ arguments: thinker (Thinker)
     def check(self, message):
         _message = {'role': 'user', 'content': message}
         
+        if 'toggle' in message.lower():
+            return 'TOGGLE'
+        else:
+            return "N/A"
         #TODO: error handle like any other call (write one function?)
-        response = openai.ChatCompletion.create(
-            model= "gpt-3.5-turbo-0301",
-            messages=self.prompt + [_message],
-            temperature=1,
-            top_p=0,
+#         response = openai.ChatCompletion.create(
+#             model= "gpt-3.5-turbo-0301",
+#             messages=self.prompt + [_message],
+#             temperature=1,
+#             top_p=0,
 
-        )
-        # print(response)
-        return response['choices'][0]['message']['content']
+#         )
+#         # print(response)
+#         return response['choices'][0]['message']['content']
 
 
     def react(self, response, message):

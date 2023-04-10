@@ -45,7 +45,7 @@ class Thinker:
         # Track what's actually been said, from user's perspective
         self.utterances = init
         
-        self.tools = [Notepad(), Toggler(self)]
+        self.tools = [Toggler(self)] #, Notepad()]
 
 
     def check_tools(self, message):
