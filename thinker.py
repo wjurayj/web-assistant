@@ -4,6 +4,9 @@ import json
 import logging
 import time
 import textwrap
+import threading
+from tools.notepad import Notepad
+from tools.toggler import Toggler
 
 # Configure the logging system
 logging.basicConfig(
@@ -33,7 +36,7 @@ class Thinker:
             },
             {
                 "role": "assistant",
-                "content": "You've got that right! I love engineering software, analyzing data, and building systems to create value for the people I work with. I'm excellent at writing code, meticulous about documentation, and passionte about building extensible and easy to understand software."
+                "content": "You've got that right! I love engineering software, analyzing data, and building systems to create value for the people I work with. I'm excellent at writing code, meticulous about documentation, and passionate about building extensible and easy to understand software."
             }
         ]
 
@@ -41,13 +44,28 @@ class Thinker:
         
         # Track what's actually been said, from user's perspective
         self.utterances = init
-    # def respond(self, message):
-    def receive(self, message):     
+        
+        self.tools = [Notepad(), Toggler(self)]
+
+
+    def check_tools(self, message):
+        print(f'previous model is {self.model}')
+        for t in self.tools:
+            t.process(message)
+        print(f'current model is {self.model}')
+        pass
+    def receive(self, message):
         self.utterances.append({
             "role": "user",
             "content": message
         })
         self.logger.info(f"> {message}")
+        # you could run your secondary task thread(s?) here...
+        # > each should 
+        thread = threading.Thread(target=self.check_tools, args=(message,), daemon=True)
+        thread.start()
+        return thread
+
         
     def verbalize(self):
         pass
