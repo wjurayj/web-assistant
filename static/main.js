@@ -5,6 +5,26 @@ const textInput = document.getElementById('text-input');
 const receivedText = document.getElementById('received-text');
 const processingIndicator = document.getElementById('processing-indicator');
 
+textForm.addEventListener('upload', (event) => {
+    event.preventDefault();
+    const text = textInput.value.trim();
+    if (text) {
+        const userText = document.createElement('p');
+
+        const avatar = document.createElement('img');
+        avatar.src = 'http://occ-0-999-1001.1.nflxso.net/dnm/api/v6/K6hjPJd6cR6FpVELC5Pd6ovHRSk/AAAABWHxaOxUNqEupjwCw-M9tgFfGFlQ22EjoG2ZYC1FsjjAWSdxOIfjdifW-rJrpNaLzTC0rpsRhE7DoH8h2zWxIQXEKaAsFUuDO2yl.png?r=2b1)';
+        avatar.className = 'user-avatar';
+        userText.appendChild(avatar);
+        userText.appendChild(document.createTextNode(text));
+        userText.className = 'user-text';
+
+        receivedText.appendChild(userText);
+        socket.emit('upload_text', text);
+
+        textInput.value = '';
+    }
+});
+
 textForm.addEventListener('submit', (event) => {
     event.preventDefault();
     const text = textInput.value.trim();
@@ -51,6 +71,17 @@ textInput.addEventListener('keydown', (e) => {
   }
 });
 
+document.addEventListener("DOMContentLoaded", function() {
+    const textInput = document.getElementById("text-input");
+    const sendBtn = document.getElementById("sendBtn");
+    const uploadBtn = document.getElementById("uploadBtn");
+
+    textInput.addEventListener("input", function() {
+        const isInputEmpty = textInput.value.trim() === "";
+        sendBtn.disabled = isInputEmpty;
+        uploadBtn.disabled = isInputEmpty;
+    });
+});
 
 
 
@@ -185,7 +216,7 @@ stopBtn.onclick = function() {
     recorder.stopRecording(() => {
         let formData = new FormData();
         formData.append('audio_data', recorder.getBlob());
-        fetch('http://localhost:5000/upload', {method: 'POST', body: formData}).then(response => {
+        fetch('http://localhost:5000/upload_audio', {method: 'POST', body: formData}).then(response => {
             if (response.ok) {
                 console.log('Audio file uploaded successfully');
             } else {
@@ -197,4 +228,19 @@ stopBtn.onclick = function() {
         // get transcription from server, fill the input bar with this
         // Request words from the server
     });
+};
+
+const sendBtn = document.getElementById("sendBtn");
+const uploadBtn = document.getElementById("uploadBtn");
+
+
+sendBtn.onclick = function() {
+    const submitEvent = new Event('submit', {cancelable: true});
+    textForm.dispatchEvent(submitEvent);
+};
+
+
+uploadBtn.onclick = function() {
+    const uploadEvent = new Event('upload', {cancelable: true});
+    textForm.dispatchEvent(uploadEvent);
 };
