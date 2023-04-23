@@ -7,6 +7,7 @@ import html2text
 class AppleNotes:
     def __init__(self):
         pass
+    
     def append_to_note(self, note_id: str, content: str) -> None:
         script = f"""
         tell application "Notes"
@@ -17,14 +18,13 @@ class AppleNotes:
         r = applescript.run(script)
         return r
 
-    # This is quality code--potentially done (although parsing still needs to be done)
     def fetch_recent_notes(self, count=5, start=1, id_tag='id', time_tag='edit_time', content_tag='content'):
         # id_tag = tags.get('id', 'id')
         applescript_code = f'''
         tell application "Notes"
             set notesCount to count of notes
             set startingNote to {start}
-            set endingNote to {start + count}
+            set endingNote to {start + count - 1}
             if (startingNote < 1) then set startingNote to 1
 
             set recentNotesInfo to {{}}
@@ -57,10 +57,8 @@ class AppleNotes:
 
         converter = html2text.HTML2Text()
         converter.ignore_links = False
-        # plain_text = converter.handle(html_content)
-
-        # print(plain_text)
         notes = []
+        
         for note in result:
             
             # Remove image tags
