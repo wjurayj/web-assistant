@@ -18,7 +18,7 @@ socketio = SocketIO(app)
 def index():
     return render_template('index.html')
 
-@app.route('/upload', methods=['POST'])
+@app.route('/upload_audio', methods=['POST'])
 def upload_audio():
     print('upload audio called')
     file = request.files.get('audio_data', None)
@@ -71,6 +71,11 @@ def transcribe(filename):
 
     print(transcript)
     return content
+
+@socketio.on('upload_text')
+def upload_text(text):
+    thread = chat.thinker.receive(text)
+    thread.join()
 
 
 @socketio.on('send_text')

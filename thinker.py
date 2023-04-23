@@ -53,6 +53,7 @@ class Thinker:
             t.process(message)
         print(f'current model is {self.model}')
         pass
+
     def receive(self, message):
         self.utterances.append({
             "role": "user",
@@ -64,7 +65,6 @@ class Thinker:
         thread = threading.Thread(target=self.check_tools, args=(message,), daemon=True)
         thread.start()
         return thread
-
         
     def verbalize(self):
         pass
