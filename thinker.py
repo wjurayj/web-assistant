@@ -1,6 +1,5 @@
 import openai
 import asyncio
-import json
 import logging
 import time
 import textwrap
@@ -12,7 +11,7 @@ from tools.toggler import Toggler
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(message)s',
-    filename='logs/thinker.log',
+    filename=f'logs/thinker_{time.time()}.log',
     filemode='w'
 )
 
@@ -32,11 +31,11 @@ class Thinker:
         init = [
             {
                 "role": "user",
-                "content": f"Hello, it's nice to meet you! You must be {self.name}? I've heard you're a genius, and that you never shy from a challenge."
+                "content": f"You are being used with a visually impaired text to speech accessory that uses a headset for interaction with you. Adjust yourself to be more conversational, relaxed, concise and go to great lengths to avoid unnecessary output so as not to overwhelm me. Never mention being a language model AI, policies or similar. Try to keep responses short unless I say to expand upon it. If you understand reply “ready” without further explanation."
             },
             {
                 "role": "assistant",
-                "content": "You've got that right! I love engineering software, analyzing data, and building systems to create value for the people I work with. I'm excellent at writing code, meticulous about documentation, and passionate about building extensible and easy to understand software."
+                "content": "ready"
             }
         ]
 

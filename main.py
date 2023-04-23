@@ -40,8 +40,27 @@ def transcribe(filename):
 
     audio_file = open(filename, "rb")
 
-    transcript = openai.Audio.transcribe("whisper-1", audio_file)#, prompt=self._collate_textmap())
+    ntries = 4
+    for i in range(ntries):
+        try:
+            transcript = openai.Audio.transcribe("whisper-1", audio_file)#, prompt=self._collate_textmap())
+            break
+        except openai.error.RateLimitError:
+            print(f"Hit rate limit on try #{i}")
+            time.sleep(2**i)
+            gen = gen_func(*args, **kwargs)
 
+        except openai.error.APIConnectionError:
+            print(f"API connection error on try #{i}")
+            gen = gen_func(*args, **kwargs)
+            time.sleep(2**i)
+
+        except Exception as e:
+
+            # Handle the error (e.g., log it, sleep and retry, etc.)
+            print(f"Unknown error occurred: {e}")
+            time.sleep(2**i)
+            
     end_time = time.time()
     elapsed_time = end_time - start_time
     content = transcript.text
@@ -56,7 +75,7 @@ def transcribe(filename):
 
 @socketio.on('send_text')
 def handle_send_text(text, chatter=None):
-    chat.thinker.receive(text)
+    thread = chat.thinker.receive(text)
     
     gen = my_generator()
 
@@ -75,6 +94,9 @@ def handle_send_text(text, chatter=None):
         emit('receive_word', word)
         socketio.sleep(0.05)  # Adjust this value to control the speed of the word-by-word display
     emit('processing_done')
+    
+    # join thread created for running any of the tools
+    thread.join()
 
 
 def generator_wrapper(gen_func):
@@ -82,7 +104,6 @@ def generator_wrapper(gen_func):
         gen = gen_func(*args, **kwargs)
         has_error = True
         t = 0
-        nfails = 4
 
         ntries = 4
         for i in range(ntries):
@@ -133,7 +154,8 @@ if __name__ == '__main__':
     logger = setup_logger('app', log_file='logs/app.log')
     
     tlogger = setup_logger('thinker', log_file='logs/thinker.log')
-    thinker = Thinker({}, tlogger) #Thinker({"model":"gpt-4-0314"}, tlogger)
+    # thinker = Thinker({}, tlogger)
+    thinker = Thinker({"model":"gpt-4-0314"}, tlogger)
     
     
     chat = Chatter(listener=None, thinker=thinker, speaker=None)
