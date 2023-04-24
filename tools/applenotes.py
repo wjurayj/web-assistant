@@ -1,13 +1,12 @@
-#applescript parsing
 import applescript
 import re
 import html2text
+import html
 
 
 class AppleNotes:
     def __init__(self):
         pass
-    
     def append_to_note(self, note_id: str, content: str) -> None:
         script = f"""
         tell application "Notes"
@@ -19,7 +18,6 @@ class AppleNotes:
         return r
 
     def fetch_recent_notes(self, count=5, start=1, id_tag='id', time_tag='edit_time', content_tag='content'):
-        # id_tag = tags.get('id', 'id')
         applescript_code = f'''
         tell application "Notes"
             set notesCount to count of notes
@@ -57,8 +55,8 @@ class AppleNotes:
 
         converter = html2text.HTML2Text()
         converter.ignore_links = False
+
         notes = []
-        
         for note in result:
             
             # Remove image tags
@@ -71,10 +69,12 @@ class AppleNotes:
             })            
         return notes
     
-    def create_new_note(self, content, name='\n'):
+    def create_new_note(self, content, name='AI note'):
+        content_html = html.escape(content).replace('\n', '<br>').replace(' ', '&nbsp;')
+
         applescript_code = f'''
         tell application "Notes"
-            make new note at folder "Notes" with properties {{name: "{name}", body: "{content}"}}
+            make new note at folder "Notes" with properties {{name: "{name}", body: "{content_html}"}}
         end tell
         '''
 
