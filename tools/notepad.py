@@ -1,64 +1,50 @@
-import openai
-import os
+import pandas as pd
 
-class Notepad:
-    def __init__(self):
-        self.description = """
-Use this class to write after a user requests that you make a note of something
-arguments: filename (string)
-        """
-        self.prompt = [
-            {
-                'role':'user',
-                'content':'You are a monitor process for a virtual assistant. You should respond to every input with "N/A" and nothing else, unless the user asks that you make a note of something. In this case, the first word of your response should be the name of the file (no spaces, all lowercase, with a .txt extension) that the user wants you to write into, followed directly by the text that that the user wants written to this file, with a colin in between. If no filename is specified, use the placeholder filename notes.txt'
-            },
-            {
-                'role':'assistant',
-                'content': 'N/A',
-            },
-            {
-                'role':'user',
-                'content':'Make a note that my brother will be visiting in May'
-            },
-            {
-                'role':'assistant',
-                'content': 'notes.txt: brother visits in may'
-            }
-        ]
-    def process(self, message):
-        response = self.check(message)
-        # print(response)
-        self.react(response)
+class NotePad(Tool):  # NotePad now inherits from Tool
+    def __init__(self, df=[]):
+        trigger_prompt = None
+        actions_prompt = None
+        super().__init__(trigger_prompt, actions_prompt)  # Pass trigger_prompt and action_prompt to the Tool's constructor
+        self.notes_api  = AppleNotes()
+        
+        self.df = df #should also be able to pass a filepath to .csv for easy initilization
+        self.last_update_time = None
+        if len(self.df):
+            self.last_update_time = self.df.edit_time.max()
+            
+        # self.fetch_notes()  # Fetch the 50 most recent notes on initialization
 
-    def check(self, message):
-        _message = {'role': 'user', 'content': message}
+    def fetch_recent_notes(self, count=5, start=1):
+        kwargs = {
+            'id_tag':'zmcnuadsl',
+            'time_tag':'asdlkjadk',
+            'content_tag':'dakjkcmas',
+        }
+        notedata = self.notes_api.fetch_recent_notes(start=start, count=count, **kwargs) #this api needs to have start index as well
+        notelist = self.notes_api.parse_notes(notedata, **kwargs)
         
-        #error handle like any other call (write one function?)
-        response = openai.ChatCompletion.create(
-            model= "gpt-3.5-turbo-0301",
-            messages=self.prompt + [_message],
-            temperature=1,
-            top_p=0.1,
-            frequency_penalty=0.2,
-        )
-        # print(response)
-        return response['choices'][0]['message']['content']
-
-    def react(self, response):
-        words = response.split(': ')
-
-        if words[0] == 'N/A':
-            return
-        print(f'making note of {response}')
+        df = pd.DataFrame(notelist)
+        df.edit_time = pd.to_datetime(df.edit_time)
         
-        filename = words[0]
-        text = response[len(filename)+1:].strip()
-        
-        #ensure that it's a text file
-        if filename[-4:] != '.txt':
-            print(filename)
-            return
-        
-        # 'a+' mode means - open for reading and appending, create the file if it doesn't exist.
-        with open(os.path.join('notes', filename), 'a+') as file:
-            file.write(text + '\n')
+        return df
+    
+    def initialize(self, max_notes=20):
+        notes = self.fetch_recent_notes(max_notes)
+        self.df = notes
+        self.last_update_time = self.df.edit_time.max()
+    
+    def update(self, batchsize=5):
+        assert len(self.df) > 0
+        start = 1
+        notes_pulled = 0
+        while True:
+            notes = self.fetch_recent_notes(batchsize, start)
+            notes = notes[notes.edit_time > self.last_update_time]
+            if notes.empty:
+                self.df.sort_values('edit_time', inplace=True)
+                return notes_pulled
+            self.df = self.df.append(notes, ignore_index=True)
+            start += batchsize
+            
+    def extend(self):
+        pass
