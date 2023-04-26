@@ -4,7 +4,7 @@ import logging
 import time
 import textwrap
 import threading
-from tools.notepad import Notepad
+# from tools.notepad import Notepad
 from tools.toggler import Toggler
 
 # Configure the logging system
@@ -46,8 +46,11 @@ class Thinker:
         
         self.tools = [Toggler(self)] #, Notepad()]
 
-
     def check_tools(self, message):
+        # This function iterates over self.tools (or self.toolkit.tools)
+        # Builds a list of questions for GPT-3
+        # Packs into one prompt and feeds them in
+        # Parses outputs using dict of indices (lookup each tool to get its prompt indices in choices)
         print(f'previous model is {self.model}')
         for t in self.tools:
             t.process(message)
@@ -61,10 +64,26 @@ class Thinker:
         })
         self.logger.info(f"> {message}")
         # you could run your secondary task thread(s?) here...
-        # > each should 
+        # > each should ...
+        
         thread = threading.Thread(target=self.check_tools, args=(message,), daemon=True)
         thread.start()
         return thread
+    
+    #this should eventually replace recieve()
+    # it should 
+    def _receive(self, message):
+        self.utterances.append({
+            "role": "user",
+            "content": message
+        })
+        self.logger.info(f"> {message}")
+
+        #this should instead be blocking (but whatever)
+        thread = threading.Thread(target=self.check_tools, args=(message,), daemon=True)
+        thread.start()
+        return thread
+
         
     def verbalize(self):
         pass
