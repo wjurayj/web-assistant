@@ -4,6 +4,7 @@ import logging
 import time
 import textwrap
 import threading
+from utils import Message
 # from tools.notepad import Notepad
 from tools.toggler import Toggler
 
@@ -23,20 +24,20 @@ class Thinker:
         self.logger = logger if logger else logging.getLogger()
         self.logger.warning(f"Initialized Thinker using model {self.model}")
 
-        prime = {
+        prime = Message(**{
             "role": "system",
             "content": f"You are {self.name}, a friendly and helpful coding assistant."
-        }
+        })
         
         init = [
-            {
+            Message(**{
                 "role": "user",
                 "content": f"You are being used with a visually impaired text to speech accessory that uses a headset for interaction with you. Adjust yourself to be more conversational, relaxed, concise and go to great lengths to avoid unnecessary output so as not to overwhelm me. Never mention being a language model AI, policies or similar. Try to keep responses short unless I say to expand upon it. If you understand reply “ready” without further explanation."
-            },
-            {
+            }),
+            Message(**{
                 "role": "assistant",
                 "content": "ready"
-            }
+            })
         ]
 
         self.prime = [prime]
@@ -58,10 +59,10 @@ class Thinker:
         pass
 
     def receive(self, message):
-        self.utterances.append({
+        self.utterances.append(Message(**{
             "role": "user",
             "content": message
-        })
+        }))
         self.logger.info(f"> {message}")
         # you could run your secondary task thread(s?) here...
         # > each should ...
@@ -73,10 +74,10 @@ class Thinker:
     #this should eventually replace recieve()
     # it should 
     def _receive(self, message):
-        self.utterances.append({
+        self.utterances.append(Message(**{
             "role": "user",
             "content": message
-        })
+        }))
         self.logger.info(f"> {message}")
 
         #this should instead be blocking (but whatever)
@@ -105,7 +106,7 @@ class Thinker:
         #sned request for stream
         response = openai.ChatCompletion.create(
             model=self.model,
-            messages=self.prime + self.utterances,
+            messages=[m.to_openai() for m in self.prime + self.utterances],
             temperature=1,
             # max_tokens=256,
             top_p=0.98,
@@ -142,8 +143,8 @@ class Thinker:
             utterance += buffer
         print()
 
-        self.utterances.append({
+        self.utterances.append(Message(**{
             "role": "assistant",
             "content": utterance
-        })
+        }))
         self.logger.info(f"% {utterance}")
