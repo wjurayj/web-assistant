@@ -126,6 +126,13 @@ def generator_wrapper(gen_func):
                 gen = gen_func(*args, **kwargs)
                 time.sleep(2**i)
 
+            #generally caused by overlength context window: should clear out thinker.utterances
+            # (or maybe I should do this pre-emptively...)
+            except openai.error.InvalidRequestError as e:
+                print(f"Invalid Request Error: {e}")
+                return None
+                
+                
             except Exception as e:
 
                 # Handle the error (e.g., log it, sleep and retry, etc.)
@@ -156,6 +163,16 @@ def save_audio_to_file(audio_data, filename=None):
         wave_file.writeframes(audio_data)
 
 if __name__ == '__main__':
+    # Define the directory names
+    audio_dir = 'audio_files'
+    logs_dir = 'logs'
+
+    # Create the directories if they don't exist
+    if not os.path.exists(audio_dir):
+        os.makedirs(audio_dir)
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+
     logger = setup_logger('app', log_file='logs/app.log')
     
     tlogger = setup_logger('thinker', log_file='logs/thinker.log')
