@@ -1,24 +1,28 @@
 import pandas as pd
+from openai.embeddings_utils import get_embedding, cosine_similarity
+from toolkit import Tool
 
 class NotePad(Tool):  # NotePad now inherits from Tool
-    def __init__(self):
+    def __init__(self, cache_path='notes_cache.csv'):
         trigger_prompt = None
         actions_prompt = None
         super().__init__(trigger_prompt, actions_prompt)  # Pass trigger_prompt and action_prompt to the Tool's constructor
         self.api = AppleNotes()
         
-        self.df = pd.read_csv('notes_cache.csv')
-        # if not 'embedding' in self.df.columns:
-        self.df.edit_time = pd.to_datetime(self.df.edit_time)
-        self.df.embedding = self.df.embedding.apply(eval)
+        if os.path.isfile(cache_path):
+            self.df = pd.read_csv(cache_path)
+            self.df.edit_time = pd.to_datetime(self.df.edit_time)
+            self.df.embedding = self.df.embedding.apply(eval)
+
+        else:
+            self.initialize()
         
         self.last_update_time = None
         if len(self.df):
             self.last_update_time = self.df.edit_time.max()
+        else:
+            self.initialize()
         self.embeddings = np
-        
-        # self.embe
-        # self.fetch_notes()  # Fetch the 50 most recent notes on initialization
 
     def fetch_recent_notes(self, count=5, start=1):
         kwargs = {
@@ -41,7 +45,7 @@ class NotePad(Tool):  # NotePad now inherits from Tool
     
     def update(self, batchsize=5):
         if not len(self.df):
-            print('Call self..initialize() first before calling self.update() 
+            print("Call self.initialize() first before calling self.update()")
         start = 1
         notes_pulled = 0
         while True:
@@ -56,27 +60,18 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             start += batchsize
         
     def write(self, content, node_id=None):
+        prompt = (
+            "You are the note-management arm of a superintelligent AI system."
+            " Based on the previous conversation, and the user's most recent request,"
+            " respond with the content that should be added to the relevant note"
+        )
+
         if note_id:
             self.api.append_to_note(note_id, content)
         else:
             self.api.create_new_note(content)
     def extend_history(self):
         pass
-
-    def write(self, messages, note_id=None):
-        prompt = (
-            "You are the note-management arm of a superintelligent AI system."
-            " Based on the previous conversation, and the user's most recent request,"
-            " respond with the content that should be added to the relevant note"
-        )
-        #response = openai.ChatCompletions.create(data)
-        if note_id:
-            # this is where the appending logic happens
-            # in the future we may want unified read+write logic for edits
-            pass
-        else:
-            self.notes_api.create_new_note(response)
-        
         
     def read(self):
         prompt = (
@@ -87,5 +82,6 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             " include any explanation of what you are doing, or address the user"
             " in any way."
         )
+                  
     def rank_notes(self, query):
         pass
