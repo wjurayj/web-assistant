@@ -1,16 +1,22 @@
 import pandas as pd
 from openai.embeddings_utils import get_embedding, cosine_similarity
 from toolkit import Tool
+from applenotes import AppleNotes
+import os
+import time
+
+
 
 class NotePad(Tool):  # NotePad now inherits from Tool
-    def __init__(self, cache_path='notes_cache.csv'):
+    def __init__(self, cache_path='notes_cache.csv', thinker=None):
         trigger_prompt = None
         actions_prompt = None
-        super().__init__(trigger_prompt, actions_prompt)  # Pass trigger_prompt and action_prompt to the Tool's constructor
+        super().__init__(trigger_prompt, actions_prompt, thinker)  # Pass trigger_prompt and action_prompt to the Tool's constructor
+        self.filepath = cache_path
         self.api = AppleNotes()
         
-        if os.path.isfile(cache_path):
-            self.df = pd.read_csv(cache_path)
+        if os.path.isfile(self.filepath):
+            self.df = pd.read_csv(self.filepath)
             self.df.edit_time = pd.to_datetime(self.df.edit_time)
             self.df.embedding = self.df.embedding.apply(eval)
 
@@ -22,7 +28,42 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             self.last_update_time = self.df.edit_time.max()
         else:
             self.initialize()
-        self.embeddings = np
+                        
+    def handle(self, action, messages):
+        if action == 'new':
+            self.write(messages)
+        if action in ['read', 'append']:
+            note = self.search_notes(messages[-1].content).iloc[0]
+        
+        
+            
+    def search_notes(self, query, n=1, pprint=False, spectral=False, similarity_fxn=cosine_similarity):
+        start_time = time.time()
+        query_embedding = get_embedding(
+            query,
+            engine="text-embedding-ada-002"
+        )
+        # similarity_fxn = manhattan_distance #cosine_similarity #
+
+        if spectral:
+            embs = list(self.df.embedding) + [query_embedding]
+            spectral_embedding = SpectralEmbedding(n_components=int(np.sqrt(len(self.df))))
+            embs = spectral_embedding.fit_transform(embs)
+            self.df['spectral'] = pd.Series(list(embs[:-1]))
+            self.df["similarity"] = self.df.spectral.apply(lambda x: similarity_fxn(x, embs[-1]))
+        else:
+            self.df["similarity"] = self.df.embedding.apply(lambda x: similarity_fxn(x, query_embedding))
+
+        results = (
+            self.df.sort_values("similarity", ascending=False)
+            .head(n)
+        )
+        end_time = time.time()
+        if pprint:
+            print(f'searched {len(self.df)} notes in {end_time-start_time} seconds.\n')
+
+        return results
+
 
     def fetch_recent_notes(self, count=5, start=1):
         kwargs = {
@@ -41,6 +82,7 @@ class NotePad(Tool):  # NotePad now inherits from Tool
     def initialize(self, n=20):
         notes = self.fetch_recent_notes(n)
         self.df = notes
+        self.df['embedding'] = self.df.content.apply(lambda x: get_embedding(x, engine="text-embedding-ada-002"))
         self.last_update_time = self.df.edit_time.max()
     
     def update(self, batchsize=5):
@@ -52,28 +94,14 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             notes = self.fetch_recent_notes(batchsize, start)
             notes = notes[notes.edit_time > self.last_update_time]
             if notes.empty:
-                self.df = self.df.sort_values('edit_time', ascending=False).drop_duplicates(subset='id', keep='first')
-                # self.df.sort_values('edit_time', inplace=True)
+                self.df = self.df.sort_values('edit_time', ascending=False).drop_duplicates(subset='id', keep='first').reset_index()[['id', 'edit_time', 'content', 'embedding']]
+                self.df.to_csv(self.filepath, index=False)
                 return notes_pulled
-            notes['embedding'] = notes.content.apply(get_embedding)
-            self.df = self.df.append(notes, ignore_index=True)
+            notes['embedding'] = notes.content.apply(lambda x: get_embedding(x, engine="text-embedding-ada-002"))
+            self.df = self.df.concat(notes, ignore_index=True)
             start += batchsize
         
-    def write(self, content, node_id=None):
-        prompt = (
-            "You are the note-management arm of a superintelligent AI system."
-            " Based on the previous conversation, and the user's most recent request,"
-            " respond with the content that should be added to the relevant note"
-        )
-
-        if note_id:
-            self.api.append_to_note(note_id, content)
-        else:
-            self.api.create_new_note(content)
-    def extend_history(self):
-        pass
-        
-    def read(self):
+    def write(self, messages, node_id=None):
         prompt = (
             "You are the note-management arm of a superintelligent AI system."
             " Based on the previous conversation, and the user's most recent request,"
@@ -82,6 +110,21 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             " include any explanation of what you are doing, or address the user"
             " in any way."
         )
-                  
+        
+        response = openai.ChatCompletions.create(
+            model='gpt-3.5-turbo',
+            messages=[message.to_openai() for message in messages[-3:]],
+            temperature=0.3,
+        )
+        content = response['choices'][0]['message']['content']
+
+        if note_id:
+            self.api.append_to_note(note_id, content)
+        else:
+            self.api.create_new_note(content)
+            
+    def extend_history(self):
+        pass
+        
     def rank_notes(self, query):
         pass
