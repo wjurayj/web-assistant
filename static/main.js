@@ -143,6 +143,7 @@ socket.on('receive_word', (word) => {
             codeElement = document.createElement('code');
             codeElement.className = `language-${codeLanguage}`;
             codeBlock.appendChild(codeElement);
+
             receivedText.appendChild(codeBlock);
             // Prism.highlightElement(codeElement);
         } else {
@@ -191,8 +192,8 @@ socket.on('receive_word', (word) => {
 
 socket.on('processing_done', () => {
     processingIndicator.style.display = 'none';
-    const newline = document.createElement('br');
-    receivedText.appendChild(newline);
+    // const newline = document.createElement('br');
+    // receivedText.appendChild(newline);
     receivedText.scrollTop = receivedText.scrollHeight;
     textInput.disabled = false;
     // textInput.focus();
