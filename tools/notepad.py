@@ -1,5 +1,5 @@
 import pandas as pd
-from openai.embeddings_utils import get_embedding, cosine_similarity
+from .embedding_utils import get_embedding, cosine_similarity
 from .toolkit import Tool
 from .applenotes import AppleNotes
 # from applenotes import AppleNotes
@@ -31,7 +31,7 @@ class NotePad(Tool):  # NotePad now inherits from Tool
                         
     def handle(self, action, messages, thinker=None):
         note_id = None
-        
+        WRAPPER = "The AI has retrieved this note:\n\n{}\n\nYou should use the above information inform your responses"
         if action in ['read', 'append']:
             note = self.search_notes(messages[-1].content).iloc[0]
             thinker.inject(
@@ -112,7 +112,8 @@ class NotePad(Tool):  # NotePad now inherits from Tool
                 self.df.to_csv(self.filepath, index=False)
                 return notes_pulled
             notes['embedding'] = notes.content.apply(lambda x: get_embedding(x, engine="text-embedding-ada-002"))
-            self.df = self.df.append(notes, ignore_index=True)
+            # self.df = self.df.append(notes, ignore_index=True)
+            self.df = pd.concat([self.df, notes], axis=0, ignore_index=True)
             start += batchsize
         
     def write(self, messages, note_id=None):
