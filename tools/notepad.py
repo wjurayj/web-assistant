@@ -33,6 +33,7 @@ class NotePad(Tool):  # NotePad now inherits from Tool
         note_id = None
         WRAPPER = "The AI has retrieved this note:\n\n{}\n\nYou should use the above information inform your responses"
         if action in ['read', 'append']:
+            self.update(batchsize=2)
             note = self.search_notes(messages[-1].content).iloc[0]
             thinker.inject(
                 note.content,
