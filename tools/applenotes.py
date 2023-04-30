@@ -7,14 +7,27 @@ class AppleNotes:
     def __init__(self):
         pass
     def append_to_note(self, note_id: str, content: str) -> None:
+        content_html = html.escape(content).replace('\n', '<br>').replace(' ', '&nbsp;')
+
         script = f"""
         tell application "Notes"
             set target_note to first note whose id is "{note_id}"
-            set body of target_note to (body of target_note) & "{content}"
+            set body of target_note to (body of target_note) & "{content_html}"
         end tell
         """
         r = applescript.run(script)
         return r
+    
+    def create_new_note(self, content, name='AI note'):
+        content_html = html.escape(content).replace('\n', '<br>').replace(' ', '&nbsp;')
+
+        applescript_code = f'''
+        tell application "Notes"
+            make new note at folder "Notes" with properties {{name: "{name}", body: "{content_html}"}}
+        end tell
+        '''
+
+        applescript.run(applescript_code)
 
     def fetch_recent_notes(self, count=5, start=1, id_tag='id', time_tag='edit_time', content_tag='content'):
         # id_tag = tags.get('id', 'id')
@@ -70,17 +83,6 @@ class AppleNotes:
                 'content': converter.handle(cleaned_content),
             })            
         return notes
-    
-    def create_new_note(self, content, name='AI note'):
-        content_html = html.escape(content).replace('\n', '<br>').replace(' ', '&nbsp;')
-
-        applescript_code = f'''
-        tell application "Notes"
-            make new note at folder "Notes" with properties {{name: "{name}", body: "{content_html}"}}
-        end tell
-        '''
-
-        applescript.run(applescript_code)
 
     def edit_note(self, note_id, new_content):
         pass
