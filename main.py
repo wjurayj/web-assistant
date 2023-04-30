@@ -164,7 +164,7 @@ def save_audio_to_file(audio_data, filename=None):
 
 if __name__ == '__main__':
     # Define the directory names
-    audio_dir = 'audio_files'
+    audio_dir = 'user_audio'
     logs_dir = 'logs'
 
     # Create the directories if they don't exist
