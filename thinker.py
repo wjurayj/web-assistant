@@ -7,6 +7,8 @@ import threading
 from utils import Message
 # from tools.notepad import Notepad
 from tools.toggler import Toggler
+from tools.toolkit import ToolKit
+from tools.notepad import NotePad
 
 # Configure the logging system
 logging.basicConfig(
@@ -42,12 +44,21 @@ class Thinker:
 
         self.prime = [prime]
         
+        # self.context = []
+        
         # Track what's actually been said, from user's perspective
         self.utterances = init
         
+        self.toolkit = ToolKit(self)
+        self.toolkit.add_tool(NotePad())
+        
         self.tools = [Toggler(self)] #, Notepad()]
+        
+    def inject(self, message, meta={}):
+        self.utterances.append(Message(message, meta=meta))
 
     def check_tools(self, message):
+        self.toolkit.check_tools(self.utterances)
         # This function iterates over self.tools (or self.toolkit.tools)
         # Builds a list of questions for GPT-3
         # Packs into one prompt and feeds them in
@@ -66,26 +77,11 @@ class Thinker:
         self.logger.info(f"> {message}")
         # you could run your secondary task thread(s?) here...
         # > each should ...
-        
-        thread = threading.Thread(target=self.check_tools, args=(message,), daemon=True)
-        thread.start()
-        return thread
-    
-    #this should eventually replace recieve()
-    # it should 
-    def _receive(self, message):
-        self.utterances.append(Message(**{
-            "role": "user",
-            "content": message
-        }))
-        self.logger.info(f"> {message}")
+        self.check_tools(message)
+        # thread = threading.Thread(target=self.check_tools, args=(message,), daemon=True)
+        # thread.start()
+        return None
 
-        #this should instead be blocking (but whatever)
-        thread = threading.Thread(target=self.check_tools, args=(message,), daemon=True)
-        thread.start()
-        return thread
-
-        
     def verbalize(self):
         pass
     

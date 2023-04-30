@@ -4,12 +4,13 @@ from typing import Any
 
 
 class ToolKit:
-    def __init__(self, model='text-davinci-003', thinker=None):
+    def __init__(self, thinker=None, model='gpt-3.5-turbo'):
         self.model = model
         self.tools = []
         self.thinker = thinker
         
     async def dispatch_openai_requests(
+        self,
         messages_list: list[list[dict[str,Any]]],
         model: str,
         temperature: float,
@@ -41,14 +42,14 @@ class ToolKit:
 
     def check_tools(self, messages):
         prompts = []
-        idx_map = {}
+        tool_map = {}
 
         for i, tool in enumerate(self.tools):
-            trigger_prompt = tool.get_trigger_prompt()
-            action_prompt = tool.get_action_prompt()
-            combined_prompt = f"{trigger_prompt}\n{action_prompt.format(messages)}"
-            prompts.append(combined_prompt)
-            idx_map[i] = tool
+            #each of these will need to be formatted
+            trigger_prompt = tool.get_trigger_prompt().format(messages[-1].content)
+            action_prompt = tool.get_action_prompt().format(messages[-1].content)
+            tool_map[len(prompts)] = tool
+            prompts.extend([trigger_prompt, action_prompt])
 
         # completions = openai.Completion.create(engine=self.model,
         #                                        prompt=prompts,
@@ -63,23 +64,35 @@ class ToolKit:
             # index, response_text = choice.index, choice.text.strip()
             # tool_in_response = idx_map[index]
             # responses[tool_in_response] = response_text
-            
+        messages_list = [[{'role':'user', 'content':p}] for p in prompts]
         completions = asyncio.run(
                 self.dispatch_openai_requests(
-                    messages_list = [{'user':p} for p in prompts],
+                    messages_list = messages_list,
                     model = 'gpt-3.5-turbo',
                     temperature=0,
                     max_tokens=3,
                     top_p=1,
             )
         )
-        responses = {}
+        responses = []
         for i, x in enumerate(completions):
-            responses[i] = x['choices'][0]['message']['content'].strip()
+            responses.append(x['choices'][0]['message']['content'].strip())
 
         # copmletions
-
-
+        if len(responses) % 2:
+            print('Mismatched number of trigger and action prompts--aborting toolkit process')
+            # print(prompts)
+            # print(responses)
+            return
+        for i in range(0, len(responses), 2):
+            if responses[i].lower() == 'yes':
+                action = responses[i+1]
+                print(action)
+                tool_map[i].handle(action, messages, self.thinker)
+            #if respo
+            pass
+        #instead of returning, this should iterate over the tools and call execute on them
+        # depending on whether they got a "Yes", and what the action was demanded
         return responses
 
 
@@ -87,7 +100,7 @@ class ToolKit:
         self.tools.append(tool)
 
 class Tool:
-    def __init__(self, trigger_prompt="", actions_prompt=""):
+    def __init__(self, trigger_prompt="", actions_prompt="", thinker=None):
         self.trigger_prompt = trigger_prompt
         self.action_prompt = actions_prompt
 

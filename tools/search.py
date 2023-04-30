@@ -30,7 +30,7 @@ def extract_text_from_url(url):
 
 # from bs4 import BeautifulSoup
 
-async def extract_text_from_url(url):
+async def _extract_text_from_url(url):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
@@ -44,7 +44,7 @@ async def extract_text_from_url(url):
         return ""
 
 async def fetch_all_texts(urls):
-    tasks = [asyncio.ensure_future(extract_text_from_url(url)) for url in urls]
+    tasks = [asyncio.ensure_future(_extract_text_from_url(url)) for url in urls]
     extracted_texts = await asyncio.gather(*tasks)
     return extracted_texts
 

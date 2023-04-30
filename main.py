@@ -75,7 +75,7 @@ def transcribe(filename):
 @socketio.on('upload_text')
 def upload_text(text):
     thread = chat.thinker.receive(text)
-    thread.join()
+    # thread.join()
 
 
 @socketio.on('send_text')
@@ -101,7 +101,7 @@ def handle_send_text(text, chatter=None):
     emit('processing_done')
     
     # join thread created for running any of the tools
-    thread.join()
+    # thread.join()
 
 
 def generator_wrapper(gen_func):
@@ -176,8 +176,8 @@ if __name__ == '__main__':
     logger = setup_logger('app', log_file='logs/app.log')
     
     tlogger = setup_logger('thinker', log_file='logs/thinker.log')
-    # thinker = Thinker({}, tlogger)
-    thinker = Thinker({"model":"gpt-4-0314"}, tlogger)
+    thinker = Thinker({}, tlogger)
+    # thinker = Thinker({"model":"gpt-4-0314"}, tlogger)
     
     
     chat = Chatter(listener=None, thinker=thinker, speaker=None)
@@ -189,4 +189,4 @@ if __name__ == '__main__':
         socketio.run(app, debug=True)
     except KeyboardInterrupt:
         print('Web server exited from terminal')
-    chat.save()
+    # chat.save()
