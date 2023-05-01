@@ -7,7 +7,7 @@ class AppleNotes:
     def __init__(self):
         pass
     def append_to_note(self, note_id: str, content: str) -> None:
-        content_html = html.escape(content).replace('\n', '<br>').replace(' ', '&nbsp;')
+        content_html = html.escape('\n\n' + content).replace('\n', '<br>').replace(' ', '&nbsp;')
 
         script = f"""
         tell application "Notes"
