@@ -31,7 +31,7 @@ class NotePad(Tool):  # NotePad now inherits from Tool
                         
     def handle(self, action, messages, thinker=None):
         note_id = None
-        WRAPPER = "The AI has retrieved this note:\n\n{}\n\nYou should use the above information inform your responses"
+        WRAPPER = "The AI has retrieved this note:\n\n{}\n\nYou should use the above information inform your responses. Do not directly quote or reference the note, unless the user specifically asks for its contents."
         if action in ['read', 'append']:
             self.update(batchsize=2)
             note = self.search_notes(messages[-1].content).iloc[0]
@@ -124,7 +124,7 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             " respond with the content that should be added to the relevant note."
             " Your response will be transcribed directly to the note, so do not"
             " include any explanation of what you are doing, or address the user"
-            " in any way."
+            " in any way"
         )
         
         response = openai.ChatCompletion.create(
@@ -133,7 +133,9 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             temperature=0.3,
         )
         content = response['choices'][0]['message']['content']
-
+        
+        print(f'writing | {content} | to note {note_id}')
+        
         if note_id:
             self.api.append_to_note(note_id, content)
         else:
