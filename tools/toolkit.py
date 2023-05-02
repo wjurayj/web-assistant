@@ -51,19 +51,6 @@ class ToolKit:
             tool_map[len(prompts)] = tool
             prompts.extend([trigger_prompt, action_prompt])
 
-        # completions = openai.Completion.create(engine=self.model,
-        #                                        prompt=prompts,
-        #                                        max_tokens=100,
-        #                                        n=len(prompts),
-        #                                        stop=None,
-        #                                        temperature=0)
-        
-        # responses = {}
-        
-        # for choice in completions.choices:
-            # index, response_text = choice.index, choice.text.strip()
-            # tool_in_response = idx_map[index]
-            # responses[tool_in_response] = response_text
         messages_list = [[{'role':'user', 'content':p}] for p in prompts]
         completions = asyncio.run(
                 self.dispatch_openai_requests(
