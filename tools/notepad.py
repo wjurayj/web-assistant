@@ -124,7 +124,8 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             " respond with the content that should be added to the relevant note."
             " Your response will be transcribed directly to the note, so do not"
             " include any explanation of what you are doing, or address the user"
-            " in any way"
+            " in any way. For longer inputs, you should aim to separate ideas"
+            " using newlines and indentation."
         )
         
         response = openai.ChatCompletion.create(
