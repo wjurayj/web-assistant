@@ -26,3 +26,8 @@ Press space to start/stop recording, or you can just use the text bar to write y
 The button on the far right adds the contents of the text box to the context without generating a response.
 
 You can toggle between GPT-3.5 and GPT-4 by saying "Toggle" and the name of the model you want in the same message
+
+# Tools
+To use a tool, simply mention that it should be used, and let GPT's intent judgment do the rest.
+
+Currently, a notepad is available, which can connect to your Apple Notes API.
