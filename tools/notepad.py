@@ -36,7 +36,7 @@ class NotePad(Tool):  # NotePad now inherits from Tool
             self.update(batchsize=2)
             note = self.search_notes(messages[-1].content).iloc[0]
             thinker.inject(
-                note.content,
+                WRAPPER.format(note.content),
                 meta={'tool':'notepad', 'id':note.id, 'edit_time':note.edit_time}
             )
             note_id = note.id
