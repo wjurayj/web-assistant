@@ -30,6 +30,9 @@ class NotePad(Tool):  # NotePad now inherits from Tool
         self.last_update_time = self.df.edit_time.max()
                         
     def handle(self, action, messages, thinker=None):
+        
+        # add prompt logic to extract description/contents of the note
+        
         note_id = None
         WRAPPER = "The AI has retrieved this note:\n\n{}\n\nYou should use the above information inform your responses. Do not directly quote or reference the note, unless the user specifically asks for its contents."
         if action in ['read', 'append']:
@@ -191,6 +194,8 @@ Example: What were my previous observations on team performance?
 Prediction: Yes
 Example: What were my key takeaways from last month's meeting?
 Prediction: Yes
+Example: Could you help me draft an email to my professor, saying that I won't be at this weeks meeting?
+Prediction: No
 Example: {}
 Prediction:"""
         return prompt
