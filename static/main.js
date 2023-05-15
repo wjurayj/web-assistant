@@ -104,7 +104,6 @@ document.addEventListener('keydown', (event) => {
 });
 
 
-// This shit works confirmed, but does not usefully render code blocks
 socket.on('receive_transcription', (transcribed_text) => {
     // Create and append the user-text paragraph to the received-text container
     const userText = document.createElement('p');
@@ -190,13 +189,39 @@ socket.on('receive_word', (word) => {
 
 
 
+// socket.on('processing_done', () => {
+//     processingIndicator.style.display = 'none';
+//     // const newline = document.createElement('br');
+//     // receivedText.appendChild(newline);
+//     receivedText.scrollTop = receivedText.scrollHeight;
+//     textInput.disabled = false;
+//     // textInput.focus();
+// });
+
 socket.on('processing_done', () => {
     processingIndicator.style.display = 'none';
-    // const newline = document.createElement('br');
-    // receivedText.appendChild(newline);
     receivedText.scrollTop = receivedText.scrollHeight;
     textInput.disabled = false;
-    // textInput.focus();
+
+    // Get the text from the receivedText element
+    const textFromReceivedText = receivedText.lastElementChild.textContent || receivedText.innerText;
+
+    // Split the text into words
+    // const words = textFromReceivedText.split(/\s+/);
+    const sents = textFromReceivedText.split(/[.,;!?]/);
+
+    // Get the first few words (e.g., first 10 words)
+    // const firstFewWords = words.slice(0, 20).join(' ');
+    const firstFewWords = sents.slice(0, 1).join(' ');
+
+
+    // Check if speechSynthesis API is supported
+    if ('speechSynthesis' in window) {
+        let utterance = new SpeechSynthesisUtterance(firstFewWords);
+        window.speechSynthesis.speak(utterance);
+    } else {
+        console.log('Speech Synthesis API not supported in this browser.');
+    }
 });
 
 // This from the parent index, for audio processing
